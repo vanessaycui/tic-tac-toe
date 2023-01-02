@@ -30,14 +30,14 @@ function calculateWinner(squares){
   return null;
 }
 
-//this is a component
-export default function Board() {
+
+function Board({ xIsNext, squares, onPlay }) {
   //if you want to collect data from multiple children, declare shared state in the parent.
   //useState() sets all square state to corresponding element in array
   //pass corresponding array element to the square children. 
   //the value will either be X, O or null
-  const [squares, setSquares] = useState(Array(9).fill(null));
-  const [xIsNext, setXIsNext] = useState(true);
+  // const [squares, setSquares] = useState(Array(9).fill(null));
+  // const [xIsNext, setXIsNext] = useState(true);
   const winner = calculateWinner(squares);
   let status;
   if (winner) {
@@ -62,10 +62,11 @@ export default function Board() {
     } else {
       nextSquares[i] = "O"
     }
+    onPlay(nextSquares)
 
     //tells react that the state of the component has changed. react re-renders the board the child components
-    setSquares(nextSquares)
-    setXIsNext(!xIsNext)
+    // setSquares(nextSquares)
+    // setXIsNext(!xIsNext)
 
   }
 
@@ -91,5 +92,54 @@ export default function Board() {
       </div>
   </>
   
+  )
+}
+
+//lifing the state up to Game, so now game will be the root.
+export default function Game(){
+  //an list of arrays that mirrors history of what board looks like
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  const[currentMove, setCurrentMove]=useState(0);
+  const xIsNext= currentMove % 2 ===0;
+  //current will be the last array in the history list.
+  const currentSquares = history[currentMove];
+
+
+  function handlePlay(nextSquares) {
+    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    setHistory(nextHistory);
+    setCurrentMove(nextHistory.length - 1);
+  }
+
+  //create buttons for history. when buttons are clicked, jumpTo will be triggered(going back in time )
+  function jumpTo(nextMove){
+    setCurrentMove(nextMove)
+  }
+  //squares to thru each element of history; move goes thru each array index
+  const moves = history.map((squares, move) => {
+    
+    let description;
+    if (move > 0) {
+      description = 'Go to move #' + move;
+    } else {
+      description = 'Go to game start';
+    }
+    return (
+      <li key={move}>
+        <button onClick={() => jumpTo(move)}>{description}</button>
+      </li>
+    );
+  });
+
+  return (
+    <div className="game">
+      <div className="game-board">
+        {/* transfer info to the board so the board renders properly. */}
+        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+      </div>
+      <div className="game-info">
+        <ol>{moves}</ol>
+      </div>
+    </div>
   )
 }
